@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const NAV_LINKS = [
   { label: "Platform", id: "platform" },
@@ -90,6 +90,36 @@ const INDUSTRIES = [
   "Defense & Cybersecurity", "SaaS Platforms", "AI-native Startups", "Education",
 ];
 
+// Predefined smart replies for the chat demo
+const CHAT_REPLIES: Record<string, string> = {
+  default: "That's a great question. Define AI provides enterprise-grade governance, protection, and alignment infrastructure for autonomous AI systems. Want me to walk you through a specific capability?",
+  protection: "Our AI Protection Layer intercepts rogue behavior, prompt injections, and data leakage in real time — before they reach your systems. It sits beneath every AI agent in your stack, acting as a behavioral firewall.",
+  governance: "Governance Infrastructure includes role-based access controls, human-in-the-loop checkpoints, immutable audit trails, and ethical guardrails — all baked into the architecture, not bolted on after deployment.",
+  agent: "Agent Security covers identity verification, behavioral monitoring, and execution boundaries for AI agents in production. Think of it as IAM, but purpose-built for autonomous systems.",
+  alignment: "Our Alignment Systems ensure machine decision-making stays aligned with human intent at scale. We use continuous monitoring, drift detection, and real-time correction loops.",
+  pricing: "We work with enterprises on custom deployment models. If you'd like, I can connect you with our team — just share your work email and we'll set up a call within 24 hours.",
+  demo: "Absolutely. Drop your work email and our team will schedule a personalized walkthrough of the platform tailored to your industry and use case.",
+};
+
+function getChatReply(input: string): string {
+  const lower = input.toLowerCase();
+  if (lower.includes("protect") || lower.includes("injection") || lower.includes("leak") || lower.includes("rogue")) return CHAT_REPLIES.protection;
+  if (lower.includes("govern") || lower.includes("audit") || lower.includes("compliance") || lower.includes("permission")) return CHAT_REPLIES.governance;
+  if (lower.includes("agent") || lower.includes("identity") || lower.includes("monitor")) return CHAT_REPLIES.agent;
+  if (lower.includes("align") || lower.includes("drift") || lower.includes("intent")) return CHAT_REPLIES.alignment;
+  if (lower.includes("price") || lower.includes("cost") || lower.includes("plan") || lower.includes("enterprise")) return CHAT_REPLIES.pricing;
+  if (lower.includes("demo") || lower.includes("walkthrough") || lower.includes("schedule") || lower.includes("call")) return CHAT_REPLIES.demo;
+  return CHAT_REPLIES.default;
+}
+
+// Suggested prompt chips
+const SUGGESTIONS = [
+  "What does the Protection Layer do?",
+  "Tell me about Agent Security",
+  "How does governance work?",
+  "Can I get a demo?",
+];
+
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [time, setTime] = useState("");
@@ -97,8 +127,14 @@ export default function Home() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'assistant' | 'user'; text: string }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatTyping, setChatTyping] = useState(false);
+  const [chatStarted, setChatStarted] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -128,6 +164,11 @@ export default function Home() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileMenu]);
 
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, chatTyping]);
+
   const goTo = (dir: "prev" | "next") => {
     setCurrentSlide((prev) =>
       dir === "next" ? (prev + 1) % SLIDES.length : (prev - 1 + SLIDES.length) % SLIDES.length
@@ -142,9 +183,44 @@ export default function Home() {
     }, 50);
   };
 
+  const sendMessage = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || chatTyping) return;
+
+    if (!chatStarted) setChatStarted(true);
+
+    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
+    setChatInput('');
+    setChatTyping(true);
+
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    setTimeout(() => {
+      const reply = getChatReply(trimmed);
+      setChatMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+      setChatTyping(false);
+    }, 800 + Math.random() * 800);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(chatInput);
+    }
+  };
+
+  const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setChatInput(e.target.value);
+    // Auto-resize
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  };
+
   const slide = SLIDES[currentSlide];
 
-  // Container — applied via inline styles so it CANNOT fail regardless of Tailwind state
   const containerStyle: React.CSSProperties = {
     width: "100%",
     maxWidth: "1400px",
@@ -232,7 +308,7 @@ export default function Home() {
         <div style={{ ...containerStyle, position: 'relative', zIndex: 10, paddingBottom: isMobile ? '40px' : '56px' }}>
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '40px' : '48px', minHeight: isMobile ? 'auto' : 'calc(100vh - 130px)' }}>
             {/* Left */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0, gap: isMobile ? '40px' : 0 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0, gap: isMobile ? '32px' : 0, minHeight: isMobile ? 'calc(100vh - 100px)' : 'auto' }}>
               {/* Slide counter */}
               <div className="animate-fade-up delay-200" style={{ marginTop: isMobile ? '16px' : '32px' }}>
                 <span style={{ fontSize: '14px', color: '#f4f4f5' }}>/ 0{currentSlide + 1}</span>
@@ -266,217 +342,458 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Prev / Next */}
-              <div className="animate-fade-up delay-600" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <button onClick={() => goTo("prev")}
-                  style={{ fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.3s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(244,244,245,0.5)')}
-                >Prev</button>
-                <span style={{ color: 'rgba(244,244,245,0.2)', fontSize: '13px' }}>/</span>
-                <button onClick={() => goTo("next")}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.3s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(244,244,245,0.5)')}
-                >
-                  Next <span style={{ fontSize: '16px' }}>→</span>
-                </button>
-              </div>
+              {!isMobile && (
+                <div className="animate-fade-up delay-600" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                  <button onClick={() => goTo("prev")}
+                    style={{ fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.3s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(244,244,245,0.5)')}
+                  >Prev</button>
+                  <span style={{ color: 'rgba(244,244,245,0.2)', fontSize: '13px' }}>/</span>
+                  <button onClick={() => goTo("next")}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.3s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(244,244,245,0.5)')}
+                  >
+                    Next <span style={{ fontSize: '16px' }}>→</span>
+                  </button>
+                </div>
+              )}
+
+              {isMobile && (
+                <div className="animate-fade-up delay-600" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                  <button onClick={() => goTo("prev")}
+                    style={{ fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >Prev</button>
+                  <span style={{ color: 'rgba(244,244,245,0.2)', fontSize: '13px' }}>/</span>
+                  <button onClick={() => goTo("next")}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Next <span style={{ fontSize: '16px' }}>→</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Right — Intelligence Core (hidden on mobile) */}
+            {/* ===== RIGHT — CLAUDE-STYLE CHAT INTERFACE ===== */}
             {!isMobile && (
-              <div style={{ width: 'clamp(320px, 32vw, 460px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingTop: '120px', paddingBottom: '20px' }}>
-                <div style={{ position: 'relative', width: '320px', height: '320px' }}>
-                  {/* Outer glow halo */}
-                  <div className="core-halo" style={{
-                    position: 'absolute', inset: '-20%',
-                    background: 'radial-gradient(circle, rgba(37,99,235,0.35), rgba(37,99,235,0.08) 40%, transparent 70%)',
-                    filter: 'blur(30px)',
-                    borderRadius: '50%',
-                    pointerEvents: 'none',
-                  }} />
+              <div
+                className="animate-fade-up delay-500"
+                style={{
+                  width: 'clamp(380px, 36vw, 500px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flexShrink: 0,
+                  marginTop: '32px',
+                  marginBottom: '20px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.02)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}
+              >
 
-                  {/* Rotating outer ring (slow, clockwise) */}
-                  <div className="core-spin-slow" style={{ position: 'absolute', inset: 0 }}>
-                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
-                      <defs>
-                        <linearGradient id="ringGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.9" />
-                          <stop offset="50%" stopColor="#2563EB" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="200" cy="200" r="180" fill="none" stroke="url(#ringGrad1)" strokeWidth="1.5" strokeDasharray="280 850" strokeLinecap="round" />
-                      <circle cx="200" cy="200" r="180" fill="none" stroke="rgba(96,165,250,0.12)" strokeWidth="0.5" strokeDasharray="2 6" />
-                    </svg>
-                  </div>
 
-                  {/* Rotating mid ring (medium, counter-clockwise) */}
-                  <div className="core-spin-rev" style={{ position: 'absolute', inset: '8%' }}>
-                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
-                      <defs>
-                        <linearGradient id="ringGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.8" />
-                          <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="200" cy="200" r="170" fill="none" stroke="url(#ringGrad2)" strokeWidth="1.2" strokeDasharray="220 850" strokeLinecap="round" />
-                      <circle cx="200" cy="200" r="170" fill="none" stroke="rgba(147,197,253,0.1)" strokeWidth="0.5" />
-                    </svg>
-                  </div>
-
-                  {/* Rotating inner ring (fast, clockwise) */}
-                  <div className="core-spin-fast" style={{ position: 'absolute', inset: '18%' }}>
-                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
-                      <defs>
-                        <linearGradient id="ringGrad3" x1="0%" y1="100%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#dbeafe" stopOpacity="1" />
-                          <stop offset="40%" stopColor="#60a5fa" stopOpacity="0.6" />
-                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="200" cy="200" r="160" fill="none" stroke="url(#ringGrad3)" strokeWidth="1.5" strokeDasharray="180 850" strokeLinecap="round" />
-                    </svg>
-                  </div>
-
-                  {/* Orbital dots */}
-                  <div className="core-spin-orbit" style={{ position: 'absolute', inset: 0 }}>
-                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                      <circle cx="200" cy="20" r="4" fill="#60a5fa">
-                        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
-                      </circle>
-                      <circle cx="380" cy="200" r="3" fill="#93c5fd">
-                        <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite" />
-                      </circle>
-                      <circle cx="200" cy="380" r="2.5" fill="#dbeafe">
-                        <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
-                      </circle>
-                      <circle cx="20" cy="200" r="3" fill="#60a5fa">
-                        <animate attributeName="opacity" values="0.4;1;0.4" dur="2.2s" repeatCount="indefinite" />
-                      </circle>
-                    </svg>
-                  </div>
-
-                  {/* Pulse waves */}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <div className="core-pulse-wave" style={{ position: 'absolute', width: '50%', height: '50%', borderRadius: '50%', border: '1.5px solid rgba(96,165,250,0.5)' }} />
-                    <div className="core-pulse-wave core-pulse-wave-delay" style={{ position: 'absolute', width: '50%', height: '50%', borderRadius: '50%', border: '1.5px solid rgba(96,165,250,0.4)' }} />
-                  </div>
-
-                  {/* Glowing core sphere */}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="core-pulse" style={{
-                      width: '45%',
-                      height: '45%',
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle at 35% 30%, #ffffff 0%, #dbeafe 15%, #60a5fa 40%, #2563EB 70%, #1e3a8a 100%)',
-                      boxShadow: '0 0 60px rgba(96,165,250,0.8), 0 0 120px rgba(37,99,235,0.5), 0 0 200px rgba(37,99,235,0.3), inset 0 0 30px rgba(255,255,255,0.4)',
-                    }} />
-                  </div>
-
-                  {/* Bright shine highlight */}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                {/* Chat body */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                }}>
+                  {/* Empty state — before any messages */}
+                  {!chatStarted && (
                     <div style={{
-                      width: '15%',
-                      height: '15%',
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%)',
-                      transform: 'translate(-35%, -35%)',
-                      filter: 'blur(2px)',
-                    }} />
-                  </div>
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '40px 24px',
+                      gap: '24px',
+                      textAlign: 'center',
+                    }}>
+                      {/* Glowing orb icon */}
+                      <div style={{
+                        width: '56px', height: '56px', borderRadius: '50%',
+                        background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15), rgba(37,99,235,0.2) 50%, rgba(37,99,235,0.05) 100%)',
+                        border: '1px solid rgba(37,99,235,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 0 40px rgba(37,99,235,0.15)',
+                      }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                          <path d="M2 17l10 5 10-5" />
+                          <path d="M2 12l10 5 10-5" />
+                        </svg>
+                      </div>
+
+                      <div>
+                        <p style={{ fontSize: '15px', fontWeight: 500, color: '#f4f4f5', marginBottom: '6px', fontFamily: 'var(--font-display)' }}>
+                          How can I help you?
+                        </p>
+                        <p style={{ fontSize: '12px', color: 'rgba(244,244,245,0.35)', lineHeight: 1.5 }}>
+                          Ask about our platform, governance, or AI safety infrastructure.
+                        </p>
+                      </div>
+
+                      {/* Suggestion chips */}
+                      <div style={{
+                        display: 'flex', flexWrap: 'wrap', gap: '8px',
+                        justifyContent: 'center', maxWidth: '360px',
+                      }}>
+                        {SUGGESTIONS.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => sendMessage(s)}
+                            style={{
+                              fontSize: '11.5px',
+                              padding: '7px 14px',
+                              borderRadius: '999px',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: 'rgba(255,255,255,0.03)',
+                              color: 'rgba(244,244,245,0.55)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              fontFamily: 'var(--font-body)',
+                              lineHeight: 1.3,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(37,99,235,0.4)';
+                              e.currentTarget.style.color = '#f4f4f5';
+                              e.currentTarget.style.background = 'rgba(37,99,235,0.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                              e.currentTarget.style.color = 'rgba(244,244,245,0.55)';
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                            }}
+                          >{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Messages */}
+                  {chatStarted && (
+                    <div style={{
+                      flex: 1,
+                      padding: '20px 20px 12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                      overflowY: 'auto',
+                    }}>
+                      {chatMessages.map((msg, i) => (
+                        <div key={i} style={{
+                          display: 'flex',
+                          gap: '10px',
+                          alignItems: 'flex-start',
+                          flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                        }}>
+                          {/* Avatar */}
+                          {msg.role === 'assistant' && (
+                            <div style={{
+                              width: '24px', height: '24px', borderRadius: '7px',
+                              background: '#2563EB',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, marginTop: '2px',
+                            }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                <path d="M2 17l10 5 10-5" />
+                                <path d="M2 12l10 5 10-5" />
+                              </svg>
+                            </div>
+                          )}
+
+                          {/* Bubble */}
+                          <div style={{
+                            maxWidth: '82%',
+                            padding: '10px 14px',
+                            borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                            fontSize: '13px',
+                            lineHeight: 1.6,
+                            background: msg.role === 'user'
+                              ? '#2563EB'
+                              : 'rgba(255,255,255,0.04)',
+                            color: msg.role === 'user' ? '#ffffff' : 'rgba(244,244,245,0.85)',
+                            border: msg.role === 'user' ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                          }}>
+                            {msg.text}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Typing indicator */}
+                      {chatTyping && (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                          <div style={{
+                            width: '24px', height: '24px', borderRadius: '7px',
+                            background: '#2563EB',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0, marginTop: '2px',
+                          }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                              <path d="M2 17l10 5 10-5" />
+                              <path d="M2 12l10 5 10-5" />
+                            </svg>
+                          </div>
+                          <div style={{
+                            padding: '12px 16px',
+                            borderRadius: '14px 14px 14px 4px',
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex', gap: '5px', alignItems: 'center',
+                          }}>
+                            <span className="typing-dot" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                            <span className="typing-dot typing-dot-2" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                            <span className="typing-dot typing-dot-3" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                          </div>
+                        </div>
+                      )}
+
+                      <div ref={chatEndRef} />
+                    </div>
+                  )}
                 </div>
 
-                {/* Early Access Waitlist — below the animation */}
-                <div
-                  className="animate-fade-up delay-700"
-                  style={{
-                    marginTop: '0',
-                    padding: '20px 22px',
+                {/* Chat input — Claude-style bottom composer */}
+                <div style={{
+                  padding: '12px 16px 14px',
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.015)',
+                  flexShrink: 0,
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: '8px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '12px',
-                    border: '1px solid rgba(37,99,235,0.25)',
-                    background: 'rgba(37,99,235,0.05)',
-                    width: '100%',
-                    maxWidth: '340px',
-                    boxSizing: 'border-box',
+                    padding: '6px 6px 6px 14px',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
                   }}
-                >
-                  <div style={{ marginBottom: '14px' }}>
-                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, color: 'rgba(244,244,245,0.7)' }}>
-                      Request Early Access
-                    </span>
-                  </div>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!waitlistEmail) return;
-                      setWaitlistStatus('submitting');
-                      setTimeout(() => {
-                        setWaitlistStatus('success');
-                        setWaitlistEmail('');
-                        setTimeout(() => setWaitlistStatus('idle'), 4000);
-                      }, 600);
-                    }}
-                    style={{ display: 'flex', gap: '6px' }}
+                  onFocus={() => {}}
                   >
-                    <input
-                      type="email"
-                      required
-                      value={waitlistEmail}
-                      onChange={(e) => setWaitlistEmail(e.target.value)}
-                      disabled={waitlistStatus === 'submitting'}
-                      placeholder="work email"
+                    <textarea
+                      ref={inputRef}
+                      value={chatInput}
+                      onChange={handleTextareaInput}
+                      onKeyDown={handleKeyDown}
+                      disabled={chatTyping}
+                      placeholder="Ask Define AI anything…"
+                      rows={1}
                       style={{
                         flex: 1, minWidth: 0,
-                        padding: '10px 12px',
-                        fontSize: '12px',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(0,0,0,0.3)',
+                        padding: '6px 0',
+                        fontSize: '13px',
+                        lineHeight: 1.5,
+                        border: 'none',
+                        background: 'transparent',
                         color: '#f4f4f5',
                         outline: 'none',
                         fontFamily: 'var(--font-body)',
-                        transition: 'border-color 0.2s',
+                        resize: 'none',
+                        maxHeight: '120px',
+                        overflowY: 'auto',
                       }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)')}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                     />
                     <button
-                      type="submit"
-                      disabled={waitlistStatus === 'submitting'}
+                      onClick={() => sendMessage(chatInput)}
+                      disabled={chatTyping || !chatInput.trim()}
                       style={{
-                        padding: '10px 14px',
-                        fontSize: '12px', fontWeight: 600,
-                        borderRadius: '6px',
+                        width: '32px', height: '32px',
+                        borderRadius: '8px',
                         border: 'none',
-                        cursor: waitlistStatus === 'submitting' ? 'wait' : 'pointer',
-                        background: waitlistStatus === 'success' ? '#16a34a' : '#2563EB',
+                        cursor: chatTyping || !chatInput.trim() ? 'default' : 'pointer',
+                        background: chatTyping || !chatInput.trim() ? 'rgba(37,99,235,0.2)' : '#2563EB',
                         color: '#ffffff',
-                        fontFamily: 'var(--font-body)',
-                        whiteSpace: 'nowrap',
-                        transition: 'background 0.3s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        flexShrink: 0,
+                        opacity: chatTyping || !chatInput.trim() ? 0.4 : 1,
                       }}
-                      onMouseEnter={(e) => { if (waitlistStatus === 'idle') e.currentTarget.style.background = '#1d4ed8'; }}
-                      onMouseLeave={(e) => { if (waitlistStatus === 'idle') e.currentTarget.style.background = '#2563EB'; }}
                     >
-                      {waitlistStatus === 'submitting' ? '...' : waitlistStatus === 'success' ? '✓' : 'Join'}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                      </svg>
                     </button>
-                  </form>
-
-                  {waitlistStatus === 'success' && (
-                    <p style={{ marginTop: '10px', fontSize: '11px', color: '#86efac' }}>
-                      You&apos;re on the list. We&apos;ll reach out soon.
-                    </p>
-                  )}
+                  </div>
+                  <p style={{ fontSize: '10px', color: 'rgba(244,244,245,0.2)', textAlign: 'center', marginTop: '8px' }}>
+                    Define AI Assistant · Explore our platform capabilities
+                  </p>
                 </div>
               </div>
             )}
+
+
           </div>
         </div>
       </section>
+
+      {/* ===== MOBILE CHAT — below hero ===== */}
+      {isMobile && (
+        <section style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ ...containerStyle, paddingTop: '24px', paddingBottom: '40px' }}>
+            {/* Prev/Next above chat */}
+            <div className="animate-fade-up delay-600" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+              gap: '24px', paddingBottom: '20px',
+            }}>
+              <button onClick={() => goTo("prev")}
+                style={{ fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer' }}
+              >Prev</button>
+              <span style={{ color: 'rgba(244,244,245,0.2)', fontSize: '13px' }}>/</span>
+              <button onClick={() => goTo("next")}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Next <span style={{ fontSize: '16px' }}>→</span>
+              </button>
+            </div>
+            <div
+              className="animate-fade-up delay-500"
+              style={{
+                width: '100%',
+                borderRadius: '14px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.02)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Mobile messages */}
+              <div style={{
+                padding: '16px',
+                display: 'flex', flexDirection: 'column', gap: '10px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                minHeight: chatStarted ? '100px' : 'auto',
+              }}>
+                {!chatStarted && (
+                  <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                    <p style={{ fontSize: '13px', color: 'rgba(244,244,245,0.4)', marginBottom: '14px' }}>
+                      Ask about our platform capabilities
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+                      {SUGGESTIONS.slice(0, 3).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => sendMessage(s)}
+                          style={{
+                            fontSize: '11px', padding: '6px 12px', borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: 'rgba(244,244,245,0.55)', cursor: 'pointer',
+                            fontFamily: 'var(--font-body)',
+                          }}
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {chatMessages.map((msg, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    gap: '8px',
+                  }}>
+                    {msg.role === 'assistant' && (
+                      <div style={{
+                        width: '20px', height: '20px', borderRadius: '6px',
+                        background: '#2563EB', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', flexShrink: 0, marginTop: '2px',
+                      }}>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                          <path d="M2 17l10 5 10-5" />
+                          <path d="M2 12l10 5 10-5" />
+                        </svg>
+                      </div>
+                    )}
+                    <div style={{
+                      maxWidth: '80%', padding: '8px 12px',
+                      borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                      fontSize: '12px', lineHeight: 1.5,
+                      background: msg.role === 'user' ? '#2563EB' : 'rgba(255,255,255,0.04)',
+                      color: msg.role === 'user' ? '#ffffff' : 'rgba(244,244,245,0.85)',
+                      border: msg.role === 'user' ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                    }}>{msg.text}</div>
+                  </div>
+                ))}
+
+                {chatTyping && (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '20px', height: '20px', borderRadius: '6px',
+                      background: '#2563EB', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                      </svg>
+                    </div>
+                    <div style={{
+                      padding: '10px 12px', borderRadius: '12px 12px 12px 2px',
+                      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex', gap: '4px',
+                    }}>
+                      <span className="typing-dot" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                      <span className="typing-dot typing-dot-2" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                      <span className="typing-dot typing-dot-3" style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#60a5fa' }} />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Mobile input */}
+              <div style={{
+                display: 'flex', gap: '6px',
+                padding: '10px 12px',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.015)',
+              }}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(chatInput); } }}
+                  disabled={chatTyping}
+                  placeholder="Ask anything…"
+                  style={{
+                    flex: 1, minWidth: 0, padding: '9px 12px', fontSize: '12px',
+                    borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)', color: '#f4f4f5',
+                    outline: 'none', fontFamily: 'var(--font-body)',
+                  }}
+                />
+                <button
+                  onClick={() => sendMessage(chatInput)}
+                  disabled={chatTyping || !chatInput.trim()}
+                  style={{
+                    width: '36px', height: '36px', borderRadius: '8px', border: 'none',
+                    cursor: chatTyping || !chatInput.trim() ? 'default' : 'pointer',
+                    background: chatTyping || !chatInput.trim() ? 'rgba(37,99,235,0.2)' : '#2563EB',
+                    color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, opacity: chatTyping || !chatInput.trim() ? 0.4 : 1,
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== PLATFORM ===== */}
       <section id="platform" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -605,18 +922,7 @@ export default function Home() {
               Get in touch to learn how Define AI can help your organization deploy autonomous AI with confidence.
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
-                if (!email) return;
-                setFormStatus('submitting');
-                setTimeout(() => {
-                  setFormStatus('success');
-                  (e.target as HTMLFormElement).reset();
-                  setTimeout(() => setFormStatus('idle'), 4000);
-                }, 600);
-              }}
+            <div
               style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', maxWidth: '520px' }}
             >
               <input
@@ -643,7 +949,13 @@ export default function Home() {
                 onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
               />
               <button
-                type="submit"
+                onClick={() => {
+                  setFormStatus('submitting');
+                  setTimeout(() => {
+                    setFormStatus('success');
+                    setTimeout(() => setFormStatus('idle'), 4000);
+                  }, 600);
+                }}
                 disabled={formStatus === 'submitting'}
                 style={{
                   padding: '14px 24px',
@@ -664,7 +976,7 @@ export default function Home() {
               >
                 {formStatus === 'submitting' ? 'Sending...' : formStatus === 'success' ? '✓ Sent' : 'Get in touch ↗'}
               </button>
-            </form>
+            </div>
 
             {formStatus === 'success' && (
               <p style={{ marginTop: '14px', fontSize: '13px', color: '#86efac' }}>
