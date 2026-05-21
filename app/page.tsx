@@ -281,37 +281,122 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right — Sphere (hidden on mobile) */}
+            {/* Right — Intelligence Core (hidden on mobile) */}
             {!isMobile && (
               <div style={{ width: 'clamp(320px, 32vw, 460px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{ position: 'relative', width: '320px', height: '320px' }}>
-                  <div className="sphere-rotate" style={{ position: 'absolute', inset: 0, opacity: 0.3 }}>
+                <div style={{ position: 'relative', width: '380px', height: '380px' }}>
+                  {/* Outer glow halo */}
+                  <div className="core-halo" style={{
+                    position: 'absolute', inset: '-20%',
+                    background: 'radial-gradient(circle, rgba(37,99,235,0.35), rgba(37,99,235,0.08) 40%, transparent 70%)',
+                    filter: 'blur(30px)',
+                    borderRadius: '50%',
+                    pointerEvents: 'none',
+                  }} />
+
+                  {/* Rotating outer ring (slow, clockwise) */}
+                  <div className="core-spin-slow" style={{ position: 'absolute', inset: 0 }}>
                     <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
-                      <ellipse cx="200" cy="200" rx="190" ry="190" fill="none" stroke="rgba(37,99,235,0.25)" strokeWidth="0.5" />
-                      <ellipse cx="200" cy="200" rx="155" ry="155" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-                      <ellipse cx="200" cy="200" rx="120" ry="120" fill="none" stroke="rgba(37,99,235,0.2)" strokeWidth="0.5" />
-                    </svg>
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="sphere-pulse" style={{ width: '65%', height: '65%', borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, rgba(60,60,65,1), rgba(20,20,22,1) 70%)', boxShadow: '0 0 80px rgba(37,99,235,0.12), inset 0 0 60px rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg viewBox="0 0 240 240" style={{ width: '70%', height: '70%' }}>
                       <defs>
-                        <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="rgba(37,99,235,0.5)" />
-                          <stop offset="100%" stopColor="rgba(37,99,235,0)" />
+                        <linearGradient id="ringGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.9" />
+                          <stop offset="50%" stopColor="#2563EB" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
                         </linearGradient>
                       </defs>
-                      <circle cx="120" cy="120" r="110" fill="none" stroke="url(#arcGrad)" strokeWidth="1" strokeDasharray="120 580" />
+                      <circle cx="200" cy="200" r="180" fill="none" stroke="url(#ringGrad1)" strokeWidth="1.5" strokeDasharray="280 850" strokeLinecap="round" />
+                      <circle cx="200" cy="200" r="180" fill="none" stroke="rgba(96,165,250,0.12)" strokeWidth="0.5" strokeDasharray="2 6" />
                     </svg>
                   </div>
-                </div>
-                <div className="animate-fade-up delay-700" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '40px', cursor: 'pointer' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)' }}>
-                    <svg width="10" height="12" viewBox="0 0 10 12" fill="white"><path d="M0 0L10 6L0 12V0Z" /></svg>
+
+                  {/* Rotating mid ring (medium, counter-clockwise) */}
+                  <div className="core-spin-rev" style={{ position: 'absolute', inset: '8%' }}>
+                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
+                      <defs>
+                        <linearGradient id="ringGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.8" />
+                          <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="200" cy="200" r="170" fill="none" stroke="url(#ringGrad2)" strokeWidth="1.2" strokeDasharray="220 850" strokeLinecap="round" />
+                      <circle cx="200" cy="200" r="170" fill="none" stroke="rgba(147,197,253,0.1)" strokeWidth="0.5" />
+                    </svg>
                   </div>
-                  <span style={{ fontSize: '13px', color: 'rgba(244,244,245,0.5)', letterSpacing: '0.05em' }}>Watch Video</span>
+
+                  {/* Rotating inner ring (fast, clockwise) */}
+                  <div className="core-spin-fast" style={{ position: 'absolute', inset: '18%' }}>
+                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%' }}>
+                      <defs>
+                        <linearGradient id="ringGrad3" x1="0%" y1="100%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#dbeafe" stopOpacity="1" />
+                          <stop offset="40%" stopColor="#60a5fa" stopOpacity="0.6" />
+                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="200" cy="200" r="160" fill="none" stroke="url(#ringGrad3)" strokeWidth="1.5" strokeDasharray="180 850" strokeLinecap="round" />
+                    </svg>
+                  </div>
+
+                  {/* Orbital dots */}
+                  <div className="core-spin-orbit" style={{ position: 'absolute', inset: 0 }}>
+                    <svg viewBox="0 0 400 400" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                      <circle cx="200" cy="20" r="4" fill="#60a5fa">
+                        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="380" cy="200" r="3" fill="#93c5fd">
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="200" cy="380" r="2.5" fill="#dbeafe">
+                        <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="20" cy="200" r="3" fill="#60a5fa">
+                        <animate attributeName="opacity" values="0.4;1;0.4" dur="2.2s" repeatCount="indefinite" />
+                      </circle>
+                    </svg>
+                  </div>
+
+                  {/* Pulse waves */}
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <div className="core-pulse-wave" style={{ position: 'absolute', width: '50%', height: '50%', borderRadius: '50%', border: '1.5px solid rgba(96,165,250,0.5)' }} />
+                    <div className="core-pulse-wave core-pulse-wave-delay" style={{ position: 'absolute', width: '50%', height: '50%', borderRadius: '50%', border: '1.5px solid rgba(96,165,250,0.4)' }} />
+                  </div>
+
+                  {/* Glowing core sphere */}
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="core-pulse" style={{
+                      width: '45%',
+                      height: '45%',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle at 35% 30%, #ffffff 0%, #dbeafe 15%, #60a5fa 40%, #2563EB 70%, #1e3a8a 100%)',
+                      boxShadow: '0 0 60px rgba(96,165,250,0.8), 0 0 120px rgba(37,99,235,0.5), 0 0 200px rgba(37,99,235,0.3), inset 0 0 30px rgba(255,255,255,0.4)',
+                    }} />
+                  </div>
+
+                  {/* Bright shine highlight */}
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <div style={{
+                      width: '15%',
+                      height: '15%',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%)',
+                      transform: 'translate(-35%, -35%)',
+                      filter: 'blur(2px)',
+                    }} />
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => scrollTo('about')}
+                  className="animate-fade-up delay-700"
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '40px', cursor: 'pointer' }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(37,99,235,0.4)', background: 'rgba(37,99,235,0.08)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M13 6l6 6-6 6"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: '13px', color: 'rgba(244,244,245,0.7)', letterSpacing: '0.05em' }}>Contact Us</span>
                 </div>
               </div>
             )}

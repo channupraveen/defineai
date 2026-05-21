@@ -108,6 +108,140 @@ html, body {
   animation: spherePulse 4s ease-in-out infinite;
 }
 
+/* ===== Intelligence Core Animations ===== */
+@keyframes coreSpinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes coreSpinRev {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+@keyframes coreSpinFast {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes coreSpinOrbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes corePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 60px rgba(96,165,250,0.8), 0 0 120px rgba(37,99,235,0.5), 0 0 200px rgba(37,99,235,0.3), inset 0 0 30px rgba(255,255,255,0.4);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 80px rgba(96,165,250,1), 0 0 160px rgba(37,99,235,0.7), 0 0 260px rgba(37,99,235,0.45), inset 0 0 40px rgba(255,255,255,0.55);
+  }
+}
+@keyframes corePulseWave {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes coreHalo {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
+}
+
+.core-spin-slow   { animation: coreSpinSlow 24s linear infinite; }
+.core-spin-rev    { animation: coreSpinRev 18s linear infinite; }
+.core-spin-fast   { animation: coreSpinFast 10s linear infinite; }
+.core-spin-orbit  { animation: coreSpinOrbit 20s linear infinite; }
+.core-pulse       { animation: corePulse 3.5s ease-in-out infinite; }
+.core-halo        { animation: coreHalo 4s ease-in-out infinite; }
+
+.core-pulse-wave {
+  animation: corePulseWave 3s ease-out infinite;
+}
+.core-pulse-wave-delay {
+  animation-delay: 1.5s;
+}
+
+/* ===== ENERGY CORE ANIMATIONS ===== */
+
+@keyframes orbitSlow    { 0% { transform: rotate(0deg);   } 100% { transform: rotate(360deg); } }
+@keyframes orbitReverse { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg);   } }
+@keyframes orbitFast    { 0% { transform: rotate(0deg);   } 100% { transform: rotate(360deg); } }
+
+.orbit-slow    { animation: orbitSlow    24s linear infinite; }
+.orbit-reverse { animation: orbitReverse 16s linear infinite; }
+.orbit-fast    { animation: orbitFast     8s linear infinite; }
+
+/* Bright pulsing core glow */
+@keyframes corePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 60px rgba(37, 99, 235, 0.6),
+      0 0 120px rgba(37, 99, 235, 0.4),
+      0 0 200px rgba(37, 99, 235, 0.25),
+      inset 0 0 40px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 80px rgba(59, 130, 246, 0.85),
+      0 0 160px rgba(59, 130, 246, 0.55),
+      0 0 260px rgba(59, 130, 246, 0.32),
+      inset 0 0 55px rgba(255, 255, 255, 0.32);
+  }
+}
+
+.energy-core {
+  animation: corePulse 3s ease-in-out infinite;
+}
+
+/* Outer halo — slow breathe */
+@keyframes haloBreathe {
+  0%, 100% { opacity: 0.35; transform: scale(1);    }
+  50%      { opacity: 0.7;  transform: scale(1.12); }
+}
+
+.energy-halo {
+  animation: haloBreathe 5s ease-in-out infinite;
+}
+
+/* Orbiting particles */
+@keyframes particleOrbit1 {
+  0%   { transform: rotate(0deg)   translateX(135px) rotate(0deg);    }
+  100% { transform: rotate(360deg) translateX(135px) rotate(-360deg); }
+}
+@keyframes particleOrbit2 {
+  0%   { transform: rotate(120deg) translateX(155px) rotate(-120deg); }
+  100% { transform: rotate(480deg) translateX(155px) rotate(-480deg); }
+}
+@keyframes particleOrbit3 {
+  0%   { transform: rotate(240deg) translateX(175px) rotate(-240deg); }
+  100% { transform: rotate(600deg) translateX(175px) rotate(-600deg); }
+}
+
+.particle-1 { animation: particleOrbit1  7s linear infinite; }
+.particle-2 { animation: particleOrbit2  9s linear infinite; }
+.particle-3 { animation: particleOrbit3 11s linear infinite; }
+
+/* Soft twinkle for ambient particles */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1;   }
+}
+.twinkle-1 { animation: twinkle 2.2s ease-in-out infinite; }
+.twinkle-2 { animation: twinkle 2.8s ease-in-out infinite 0.5s; }
+.twinkle-3 { animation: twinkle 3.4s ease-in-out infinite 1s; }
+
+/* Conic gradient sweep around core */
+@keyframes sweep {
+  0%   { transform: rotate(0deg);   }
+  100% { transform: rotate(360deg); }
+}
+.conic-sweep { animation: sweep 6s linear infinite; }
+
 /* Laptop adjustments handled inline via Tailwind responsive classes */
 
 /* Mobile: subtler grid */
