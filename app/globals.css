@@ -107,3 +107,18 @@ html, body {
 .sphere-pulse {
   animation: spherePulse 4s ease-in-out infinite;
 }
+
+/* Laptop adjustments handled inline via Tailwind responsive classes */
+
+/* Mobile: subtler grid */
+@media (max-width: 1023px) {
+  .grid-bg {
+    background-size: 50px 50px;
+  }
+}
+
+/* Ensure no horizontal scroll on any breakpoint */
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
