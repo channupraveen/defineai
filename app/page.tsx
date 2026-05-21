@@ -96,6 +96,9 @@ export default function Home() {
   const [fadeKey, setFadeKey] = useState(0);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -283,8 +286,8 @@ export default function Home() {
 
             {/* Right — Intelligence Core (hidden on mobile) */}
             {!isMobile && (
-              <div style={{ width: 'clamp(320px, 32vw, 460px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{ position: 'relative', width: '380px', height: '380px' }}>
+              <div style={{ width: 'clamp(320px, 32vw, 460px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingTop: '120px', paddingBottom: '20px' }}>
+                <div style={{ position: 'relative', width: '320px', height: '320px' }}>
                   {/* Outer glow halo */}
                   <div className="core-halo" style={{
                     position: 'absolute', inset: '-20%',
@@ -386,17 +389,88 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Early Access Waitlist — below the animation */}
                 <div
-                  onClick={() => scrollTo('about')}
                   className="animate-fade-up delay-700"
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '40px', cursor: 'pointer' }}
+                  style={{
+                    marginTop: '0',
+                    padding: '20px 22px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(37,99,235,0.25)',
+                    background: 'rgba(37,99,235,0.05)',
+                    width: '100%',
+                    maxWidth: '340px',
+                    boxSizing: 'border-box',
+                  }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(37,99,235,0.4)', background: 'rgba(37,99,235,0.08)' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 6l6 6-6 6"/>
-                    </svg>
+                  <div style={{ marginBottom: '14px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, color: 'rgba(244,244,245,0.7)' }}>
+                      Request Early Access
+                    </span>
                   </div>
-                  <span style={{ fontSize: '13px', color: 'rgba(244,244,245,0.7)', letterSpacing: '0.05em' }}>Contact Us</span>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!waitlistEmail) return;
+                      setWaitlistStatus('submitting');
+                      setTimeout(() => {
+                        setWaitlistStatus('success');
+                        setWaitlistEmail('');
+                        setTimeout(() => setWaitlistStatus('idle'), 4000);
+                      }, 600);
+                    }}
+                    style={{ display: 'flex', gap: '6px' }}
+                  >
+                    <input
+                      type="email"
+                      required
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                      disabled={waitlistStatus === 'submitting'}
+                      placeholder="work email"
+                      style={{
+                        flex: 1, minWidth: 0,
+                        padding: '10px 12px',
+                        fontSize: '12px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#f4f4f5',
+                        outline: 'none',
+                        fontFamily: 'var(--font-body)',
+                        transition: 'border-color 0.2s',
+                      }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)')}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                    />
+                    <button
+                      type="submit"
+                      disabled={waitlistStatus === 'submitting'}
+                      style={{
+                        padding: '10px 14px',
+                        fontSize: '12px', fontWeight: 600,
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: waitlistStatus === 'submitting' ? 'wait' : 'pointer',
+                        background: waitlistStatus === 'success' ? '#16a34a' : '#2563EB',
+                        color: '#ffffff',
+                        fontFamily: 'var(--font-body)',
+                        whiteSpace: 'nowrap',
+                        transition: 'background 0.3s',
+                      }}
+                      onMouseEnter={(e) => { if (waitlistStatus === 'idle') e.currentTarget.style.background = '#1d4ed8'; }}
+                      onMouseLeave={(e) => { if (waitlistStatus === 'idle') e.currentTarget.style.background = '#2563EB'; }}
+                    >
+                      {waitlistStatus === 'submitting' ? '...' : waitlistStatus === 'success' ? '✓' : 'Join'}
+                    </button>
+                  </form>
+
+                  {waitlistStatus === 'success' && (
+                    <p style={{ marginTop: '10px', fontSize: '11px', color: '#86efac' }}>
+                      You&apos;re on the list. We&apos;ll reach out soon.
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -527,14 +601,76 @@ export default function Home() {
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 'clamp(1.1rem, 2vw, 1.8rem)', color: '#f4f4f5', lineHeight: 1.3, marginBottom: '14px' }}>
               Ready to make AI safe at scale?
             </h3>
-            <p style={{ fontSize: isMobile ? '13px' : '14px', lineHeight: 1.7, maxWidth: '480px', color: 'rgba(244,244,245,0.45)' }}>
+            <p style={{ fontSize: isMobile ? '13px' : '14px', lineHeight: 1.7, maxWidth: '480px', color: 'rgba(244,244,245,0.45)', marginBottom: '28px' }}>
               Get in touch to learn how Define AI can help your organization deploy autonomous AI with confidence.
             </p>
-            <button
-              style={{ marginTop: '28px', padding: '12px 24px', fontSize: '14px', fontWeight: 500, borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'background 0.3s', background: '#2563EB', color: '#ffffff', fontFamily: 'var(--font-body)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#2563EB')}
-            >Get in touch ↗</button>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
+                if (!email) return;
+                setFormStatus('submitting');
+                setTimeout(() => {
+                  setFormStatus('success');
+                  (e.target as HTMLFormElement).reset();
+                  setTimeout(() => setFormStatus('idle'), 4000);
+                }, 600);
+              }}
+              style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', maxWidth: '520px' }}
+            >
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="you@company.com"
+                disabled={formStatus === 'submitting'}
+                style={{
+                  flex: 1,
+                  padding: '14px 18px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.03)',
+                  color: '#f4f4f5',
+                  outline: 'none',
+                  fontFamily: 'var(--font-body)',
+                  transition: 'border-color 0.2s, background 0.2s',
+                  width: isMobile ? '100%' : 'auto',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)'; e.currentTarget.style.background = 'rgba(37,99,235,0.04)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+              />
+              <button
+                type="submit"
+                disabled={formStatus === 'submitting'}
+                style={{
+                  padding: '14px 24px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: formStatus === 'submitting' ? 'wait' : 'pointer',
+                  transition: 'background 0.3s',
+                  background: formStatus === 'success' ? '#16a34a' : '#2563EB',
+                  color: '#ffffff',
+                  fontFamily: 'var(--font-body)',
+                  whiteSpace: 'nowrap',
+                  opacity: formStatus === 'submitting' ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => { if (formStatus === 'idle') e.currentTarget.style.background = '#1d4ed8'; }}
+                onMouseLeave={(e) => { if (formStatus === 'idle') e.currentTarget.style.background = '#2563EB'; }}
+              >
+                {formStatus === 'submitting' ? 'Sending...' : formStatus === 'success' ? '✓ Sent' : 'Get in touch ↗'}
+              </button>
+            </form>
+
+            {formStatus === 'success' && (
+              <p style={{ marginTop: '14px', fontSize: '13px', color: '#86efac' }}>
+                Thanks — we&apos;ll be in touch shortly.
+              </p>
+            )}
           </div>
         </div>
       </section>
